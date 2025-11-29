@@ -1,0 +1,12 @@
+.layout {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #111;
+  color: #fff;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+}
