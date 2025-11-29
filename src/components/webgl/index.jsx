@@ -3,23 +3,74 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { useScroll } from '../../hooks/use-scroll'
 import { useMemo, useRef, useState, Suspense } from 'react'
 
+function StarField() {
+    const { viewport, size } = useThree()
+    const pointsRef = useRef()
+    const scrollRef = useRef(0)
+  
+    useScroll(({ scroll }) => {
+      scrollRef.current = scroll
+    })
+  
+    const count = 2000
+    // Pixel to Three.js unit conversion factor
+    const pixelToThree = viewport.height / size.height
+
+    const positions = useMemo(() => {
+      const positions = new Float32Array(count * 3)
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * viewport.width * 2 // Wide X spread
+        // Spread Y from top of screen down to 6 screens below
+        // viewport.height * 0.5 is top. 
+        // -viewport.height * 5.5 is bottom.
+        // Random distribution in that range.
+        const totalHeight = viewport.height * 6
+        positions[i * 3 + 1] = (viewport.height * 0.5) - (Math.random() * totalHeight)
+        
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 20 - 10 // Depth spread
+      }
+      return positions
+    }, [viewport])
+  
+    useFrame(() => {
+      if (pointsRef.current) {
+          // Move stars up as we scroll down. 
+          // Multiply by pixelToThree to match scroll speed 1:1, 
+          // then multiply by 0.5 for a "distant background" parallax feel.
+          pointsRef.current.position.y = scrollRef.current * pixelToThree * 0.5
+      }
+    })
+  
+    return (
+      <points ref={pointsRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={count}
+            array={positions}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial size={0.05} color="white" sizeAttenuation transparent opacity={0.8} />
+      </points>
+    )
+  }
+
 function SimpleObjects() {
-    const { viewport } = useThree()
+    const { viewport, size } = useThree()
     const [scrollPos, setScrollPos] = useState(0)
 
     useScroll(({ scroll }) => {
         setScrollPos(scroll)
     })
     
-    // Create objects that span roughly 5 screen heights
+    const pixelToThree = viewport.height / size.height
+
     const objects = useMemo(() => {
-        return new Array(15).fill(0).map((_, i) => ({
-            // Random X within viewport width
+        return new Array(30).fill(0).map((_, i) => ({
             x: (Math.random() - 0.5) * viewport.width,
-            // Spread Y: Start at top, go down. 
-            // We subtract scrollPos later to move them "up" as we scroll down, or we can fix them in space and move camera.
-            // Here: Fixed positions in world space.
-            y: -i * (viewport.height * 0.5) + (viewport.height * 0.5), 
+            // Distribute objects evenly from top to bottom across 5 sections
+            y: (viewport.height * 0.5) - (i * (viewport.height * 5) / 30) - (Math.random() * 2),
             z: (Math.random() - 0.5) * 5,
             rotation: [Math.random() * Math.PI, Math.random() * Math.PI, 0],
             scale: 0.5 + Math.random() * 1.5,
@@ -34,7 +85,7 @@ function SimpleObjects() {
                     <mesh 
                         position={[
                             obj.x, 
-                            obj.y + (scrollPos * 0.02), // Parallax: move slightly with scroll
+                            obj.y + (scrollPos * pixelToThree * 0.8), // Move slightly slower than 1:1 for depth
                             obj.z
                         ]} 
                         rotation={obj.rotation} 
@@ -54,6 +105,7 @@ function Content() {
     <>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
+        <StarField />
         <SimpleObjects />
     </>
   )

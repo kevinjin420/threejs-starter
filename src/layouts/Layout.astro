@@ -1,22 +1,58 @@
 ---
+import { SEO } from "astro-seo";
 import '../styles/global.scss';
 
 interface Props {
 	title: string;
+	description?: string;
 }
 
-const { title } = Astro.props;
+const { 
+	title, 
+	description = "A high-performance Three.js starter template built with Astro, React, and Lenis for smooth scrolling and interactive WebGL experiences." 
+} = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Astro description" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		
+		<SEO
+			title={title}
+			description={description}
+			openGraph={{
+				basic: {
+					title: title,
+					type: "website",
+					image: "/og-image.jpg",
+				}
+			}}
+			twitter={{
+				creator: "@handle"
+			}}
+			extend={{
+				// keeping standard meta tags
+				link: [{ rel: "icon", href: "/favicon.svg" }],
+				meta: [
+					{
+						name: "twitter:image",
+						content: "/og-image.jpg",
+					},
+					{
+						name: "twitter:title",
+						content: title,
+					},
+					{
+						name: "twitter:description",
+						content: description,
+					},
+				],
+			}}
+		/>
 	</head>
 	<body>
 		<slot />
